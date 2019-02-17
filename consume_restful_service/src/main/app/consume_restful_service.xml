@@ -10,7 +10,13 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
     <http:request-config name="HTTP_Request_Configuration" host="training-american-ws.cloudhub.io" port="80" basePath="/api/flights" doc:name="HTTP Request Configuration"/>
     <http:request-config name="HTTP_Request_Configuration1" host="training-american-ws.cloudhub.io" port="80" doc:name="HTTP Request Configuration"/>
-    <flow name="consume_restful_serviceFlow">
+    <sub-flow name="SubFlow_2">
+        <logger message="This is SubFlow_2" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="flightID" value="#[message.inboundProperties.'http.uri.params'.flightID]" doc:name="Variable"/>
+        <set-payload value="#[message.payload]" doc:name="Set Payload"/>
+        <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+    </sub-flow>
+    <flow name="getFlights">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/getAllFlights" allowedMethods="GET" doc:name="HTTP"/>
         <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" doc:name="HTTP"/>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
@@ -18,11 +24,19 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <flow name="getFlightsByID">
         <http:listener config-ref="HTTP_Listener_Configuration" path="getFlightsByID/{flightID}" allowedMethods="GET" doc:name="HTTP"/>
         <set-variable variableName="flightID" value="#[message.inboundProperties.'http.uri.params'.flightID]" doc:name="Variable"/>
-        <http:request config-ref="HTTP_Request_Configuration" path="/{flightID}" method="GET" doc:name="HTTP">
-            <http:request-builder>
-                <http:uri-param paramName="flightID" value="#[flowVars.flightID]"/>
-            </http:request-builder>
-        </http:request>
+        <choice doc:name="Choice">
+            <when expression="#[regex('[0-9]', flowVars.flightID)]">
+                <http:request config-ref="HTTP_Request_Configuration" path="/{flightID}" method="GET" doc:name="HTTP">
+                    <http:request-builder>
+                        <http:uri-param paramName="flightID" value="#[flowVars.flightID]"/>
+                    </http:request-builder>
+                </http:request>
+            </when>
+            <otherwise>
+                <flow-ref name="getFlights" doc:name="Flow Reference"/>
+                <logger message="Inside default flow" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
     </flow>
     <flow name="deleteFlightByID">
@@ -35,18 +49,19 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         </http:request>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
     </flow>
-    <flow name="consume_restful_serviceFlow1">
+    <flow name="addFlight">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/addFlight" allowedMethods="POST" doc:name="HTTP"/>
-        <set-payload value="#[message.payload]" doc:name="Set Payload"/>
-        <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+        <flow-ref name="SubFlow_1" doc:name="SubFlow_1"/>
         <http:request config-ref="HTTP_Request_Configuration1" path="/api/flights" method="POST" doc:name="HTTP"/>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
     </flow>
-    <flow name="consume_restful_serviceFlow2">
-        <http:listener config-ref="HTTP_Listener_Configuration" path="/putFlight/{flightID}" allowedMethods="PUT" doc:name="HTTP"/>
-        <set-variable variableName="flightID" value="#[message.inboundProperties.'http.uri.params'.flightID]" doc:name="Variable"/>
+    <sub-flow name="SubFlow_1">
         <set-payload value="#[message.payload]" doc:name="Set Payload"/>
         <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+    </sub-flow>
+    <flow name="updateFlight">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/putFlight/{flightID}" allowedMethods="PUT" doc:name="HTTP"/>
+        <flow-ref name="SubFlow_2" doc:name="Flow Reference"/>
         <http:request config-ref="HTTP_Request_Configuration" path="/{flightID}" method="PUT" doc:name="HTTP">
             <http:request-builder>
                 <http:uri-param paramName="flightID" value="#[flowVars.flightID]"/>
