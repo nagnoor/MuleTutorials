@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Transaction>
+  <RequestID>1003</RequestID>
+  <FromAccount>3288376</FromAccount>
+  <ToAccount>247487</ToAccount>
+  <Amount>3479</Amount>
+  <TxnDate>25-02-2019</TxnDate>
+</Transaction>
