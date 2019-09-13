@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="training-american-ws.cloudhub.io" port="80" doc:name="HTTP Request Configuration"/>
+    
+    <flow name="file-connector-tutorialFlow">
+        <file:inbound-endpoint path="E:\Mule Test Files\Transaction" moveToPattern="#[message.inboundProperties.originalFileName]" moveToDirectory="E:\Mule Test Files\Backup Files" responseTimeout="10000" doc:name="CSV Reader">
+            <file:filename-regex-filter pattern=".*csv" caseSensitive="false"/>
+        </file:inbound-endpoint>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="file-connector-tutorialFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/writeCSVFile" allowedMethods="GET" doc:name="HTTP Listener"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/api/flights" method="GET" doc:name="Flight Details"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="112840f5-b244-4072-b1a6-f2ed2481c1ac">
+            <dw:input-payload doc:sample="E:\Technical Documents\MuleSoft\Technical stuffs\FlightResponse.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/csv
+---
+payload map ((payload01 , indexOfPayload01) -> {
+	ID: payload01.ID as :string,
+	Code: payload01.code,
+	Price: payload01.price as :string,
+	DepartureDate: payload01.departureDate,
+	Origin: payload01.origin,
+	Destination: payload01.destination,
+	EmptySeats: payload01.emptySeats as :string
+})]]></dw:set-payload>
+        </dw:transform-message>
+        <file:outbound-endpoint path="E:\Mule Test Files\Flight CSV Response" outputPattern="flights.csv" responseTimeout="10000" doc:name="File"/>
+    </flow>
+</mule>
