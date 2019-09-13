@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="dataweave_tutorialFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/postFlight" allowedMethods="POST" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="5e9edd87-508f-4430-aa74-4882585e76d2">
+            <dw:input-payload doc:sample="E:\Technical Documents\MuleSoft\Technical stuffs\single_json_request.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+flights:{
+	
+	desc:"Flight Details",
+	price:payload.price,
+	start:payload.origin,
+	end:payload.destination,
+	totalSeats:payload.plane.totalSeats,
+	emptySeats:payload.emptySeats,
+	code:{
+		name:"FLIGHT",
+		value:payload.code
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="dataweave_tutorialFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/transform" allowedMethods="POST" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="179b8f3d-717b-474a-8a38-9f6e5283a682">
+            <dw:input-payload doc:sample="E:\Technical Documents\MuleSoft\Technical stuffs\array_json_request.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+
+"flights":{(payload map {
+	"flight":$
+})}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="XML_Transformer">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/transformXml" allowedMethods="POST" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="d6d1a274-ae79-4a09-a78d-f98e6fde6a8d">
+            <dw:input-payload doc:sample="E:\Technical Documents\MuleSoft\Technical stuffs\flights.xml" mimeType="application/xml"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+"responses":  payload.flights.*flight map {
+	"flightResponse":{
+		index:$$,
+		code:$.code,
+		price:$.price as :number {class:"java.lang.Double"},
+		departDate:$.departureDate as :date as :string {format:"dd-MMM-yyyy"},
+		emptySeats:$.emptySeats as :number,
+		plane:$.plane	
+	}
+} filter $.flightResponse.emptySeats > 0 
+  orderBy $.flightResponse.price
+
+  ]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+
+
+</mule>
