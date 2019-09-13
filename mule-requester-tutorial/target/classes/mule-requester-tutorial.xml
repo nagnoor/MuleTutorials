@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <file:connector name="file-connector" autoDelete="true" streaming="true" validateConnections="true" moveToPattern="#[message.inboundProperties.originalFileName]" moveToDirectory="src/main/resources/backup_files" doc:name="File"/>
+    <flow name="mule-requester-tutorialFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/requestTxtFile" allowedMethods="GET" doc:name="HTTP"/>
+        <mulerequester:request resource="file://src/main/resources/employee_files/employee_details.txt?connecor=file-connector" returnClass="java.lang.String" throwExceptionOnTimeout="true" doc:name="File Mule Requester"/>
+        <logger message="File content are #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="mule-requester-tutorialFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/requestTxtFileResources" allowedMethods="GET" doc:name="HTTP"/>
+        <mulerequester:request-collection resource="file://src/main/resources/files" returnClass="java.lang.String" count="3" throwExceptionOnTimeout="true" doc:name="Mule Requester"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+flatten payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+    </flow>
+    
+</mule>

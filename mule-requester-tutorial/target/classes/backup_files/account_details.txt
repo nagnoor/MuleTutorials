@@ -1,0 +1,6 @@
+Sr_No|Account_No|Account_Type|Currency|Balance|
+1|9990|Saving|$|100|
+2|9991|Current|$|250|
+3|9992|Saving|$|3000|
+4|9993|Saving|$|1250|
+5|9994|Current|$|2300|

@@ -1,0 +1,7 @@
+Sr_No|Emp_Name|Emp_Id|Emp_Dept|Emp_DOB|Emp_Salary|
+1|John|3400|Banking|01-01-1989|25000|
+2|Joe|3401|Insurance|02-03-1970|30000|
+3|Mike|3402|Retirement|03-01-1990|10000|
+4|Tim|3403|Risk|04-11-1966|17000|
+5|Ross|3404|SCM|05-08-1974|20000|
+6|Matt|3405|Banking|06-12-1992|45000|
